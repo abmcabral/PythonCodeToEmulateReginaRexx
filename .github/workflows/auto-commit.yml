@@ -1,0 +1,41 @@
+# .github/workflows/auto-commit.yml
+name: Auto Commit Updated Files
+
+on:
+  push:
+    paths:
+      - '**'  # Watches all files, change this to specific paths if needed
+
+jobs:
+  auto-commit:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0  # Fetches all history for all branches and tags
+        
+    - name: Configure Git
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+    - name: Check for changes
+      id: check_changes
+      run: |
+        # Add all changes
+        git add -A
+        
+        # Check if there are any changes to commit
+        if git diff --staged --quiet; then
+          echo "changes_detected=false" >> $GITHUB_OUTPUT
+        else
+          echo "changes_detected=true" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Commit and push changes
+      if: steps.check_changes.outputs.changes_detected == 'true'
+      run: |
+        git commit -m "Auto-commit: Update files [skip ci]"
+        git push
